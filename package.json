@@ -1,0 +1,34 @@
+{
+  "name": "dsh-smart-ui",
+  "version": "1.0.0",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "description": "Render interactive UI — comparisons, charts, and calculators — inside the conversation.",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./client.js",
+    "./client.echarts.js": "./client.echarts.js",
+    "./client.mermaid.js": "./client.mermaid.js",
+    "./package.json": "./package.json",
+    "./locale/*.json": "./locale/*.json"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "immediately": true,
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-tool"
+      ]
+    }
+  },
+  "dependencies": {
+    "echarts": "^6.1.0",
+    "mermaid": "^12.1.0"
+  }
+}

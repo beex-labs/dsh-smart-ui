@@ -1,0 +1,31 @@
+# Dependencies — restored by `pnpm install`.
+node_modules/
+
+# Generated engine chunks. These are build outputs of build-echarts.mjs and
+# build-mermaid.mjs, which wrap the installed npm packages into the loader
+# envelope DSH serves. Rebuild with `node build-echarts.mjs && node build-mermaid.mjs`.
+client.echarts.js
+client.mermaid.js
+
+# Test artifacts: rendered SVGs/PNGs, headless-browser DOM dumps, and the
+# contact sheets. Regenerate with the scripts in test/.
+test/out/
+test/out-mermaid/
+
+# Headless-browser profiles, if a run ever writes one here. The test scripts
+# point --user-data-dir at the OS temp directory, so these should not appear;
+# listed to keep a stray run from committing cookie and history databases.
+*-profile/
+profile/
+
+# Editor and OS noise
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs and crash output
+*.log
+npm-debug.log*
+pnpm-debug.log*
