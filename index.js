@@ -20,7 +20,7 @@
  */
 
 import {
-  validateApp, TYPE_NAMES, LIMITS,
+  validateApp, TYPE_NAMES, LIMITS, getRegistryDigest,
 } from './engine.cjs'
 
 export const name = 'intelligent-ui'
@@ -525,10 +525,17 @@ function summarize(spec) {
 export function apply(ctx, config = {}) {
   const maxNodes = Number.isFinite(config.maxNodes) ? config.maxNodes : MAX_NODES
 
+  // The digest is generated from the registry, so the model is told exactly the
+  // component names the validator accepts. Without it, `kind: "app"` was
+  // unusable in practice: a blind probe knew the tool, the 12 kinds and the
+  // `app` fields but not one component `type` name, so it would have invented
+  // them and hit a validation error on the first attempt.
+  const registry = getRegistryDigest()
+
   ctx.effect(() => ctx.systemPrompt.section({
     name: 'intelligent-ui',
     order: 950,
-    text: SECTION,
+    text: `${SECTION}\n\n${registry}`,
   }), 'intelligent-ui: prompt section')
 
   ctx.effect(() => ctx.tools.register({

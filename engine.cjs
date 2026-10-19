@@ -176,6 +176,65 @@ const TYPE_NAMES = Object.keys(TYPES).concat(Object.keys(ALIASES))
 /** Small built-in icon vocabulary for `iconButton` / `button.icon`. */
 const ICONS = ['check', 'close', 'plus', 'minus', 'copy', 'arrow-left', 'arrow-right', 'search', 'download', 'play', 'pause', 'refresh', 'info', 'warning', 'calendar', 'pin']
 
+// ── prompt digest ──────────────────────────────────────────────────────────
+//
+// A model cannot use `kind: "app"` without the node type names. The tool schema
+// describes only the four top-level fields, so a model told "trees are built
+// from a registry" but not which types exist will invent component names and
+// earn a validation error. This digest is generated from `TYPES`, so it cannot
+// drift from the validator or the renderer. Measured with a blind probe: before
+// the digest, the model knew `ui_render`, the 12 kinds and the `app` fields but
+// not a single component `type` name.
+
+/** The digest, grouped the way a human would scan it. Types missing from these
+ * groups still appear (appended), so adding a type can never silently drop out
+ * of the prompt. */
+const DIGEST_GROUPS = [
+  ['text', ['text', 'title', 'caption', 'label', 'bold', 'italic', 'badge', 'link', 'quote', 'markdown', 'code', 'math', 'list', 'timeline', 'sources']],
+  ['layout', ['box', 'row', 'column', 'card', 'grid', 'bento', 'flow', 'divider', 'spacer', 'tabs', 'tab', 'accordion', 'accordionItem', 'popover', 'tooltip', 'carousel', 'responsive']],
+  ['controls', ['button', 'iconButton', 'input', 'textarea', 'select', 'combobox', 'checkbox', 'radio', 'switch', 'slider', 'datePicker', 'timePicker', 'segmented', 'form', 'fileUpload', 'dialog', 'confirmDialog']],
+  ['data', ['kpi', 'progress', 'chart', 'dataTable']],
+  ['media', ['image', 'gallery', 'lightbox', 'video', 'svg', 'diagram', 'map', 'places']],
+  ['feedback', ['toast', 'loading', 'skeleton', 'errorState', 'emptyState', 'checklist', 'stepper']],
+  ['micro-apps', ['quiz', 'flashcard', 'countdown']],
+]
+
+/**
+ * One line per group: `type(prop,prop,children?)`. A trailing `children` marks
+ * a container type.
+ * @returns {string} the prompt-ready registry digest.
+ */
+function registryDigest() {
+  const grouped = new Set(DIGEST_GROUPS.flatMap(([, names]) => names))
+  const rest = Object.keys(TYPES).filter((name) => !grouped.has(name))
+  const groups = rest.length === 0 ? DIGEST_GROUPS : DIGEST_GROUPS.concat([['other', rest]])
+  const describe = (name) => `${name}(${TYPES[name].props.join(',')}${TYPES[name].children ? ',children' : ''})`
+  return [
+    'Component registry for `kind: "app"` trees — the only accepted `type` names:',
+    ...groups.map(([label, names]) => `- ${label}: ${names.map(describe).join(' ')}`),
+    `Chart aliases (same props as \`chart\`, they only preset \`variant\`): ${Object.entries(ALIASES).map(([name, alias]) => `${name}=${alias.variant}`).join(', ')}.`,
+    'Every type also accepts `span` (1-3, grid/bento only), `hidden` and `ariaLabel`.',
+    `Expression functions (no others exist): ${FUNC_NAMES.join(', ')}.`,
+    'Actions: `{action:"set",path,value?|expr?}` (neither value nor expr = the event value), `{action:"toggle",path}`, `{action:"copy",text|expr}`, `{action:"open",url}` (http(s) only), `{action:"submit",form?}`, `{action:"call",service,payload}` (reports "not connected" unless a service is registered).',
+    'Events a node may handle in `on`: click, change, input, submit, confirm, cancel.',
+  ].join('\n')
+}
+
+/** The registry digest text. Built lazily so `FUNC_NAMES` (declared below) is
+ * initialized before the first call; cached for the process lifetime. */
+let digestCache = null
+function getRegistryDigest() {
+  if (digestCache === null) digestCache = registryDigest()
+  return digestCache
+}
+
+/** Build the digest without the cache. Only tests need this: the cached value
+ * is what the prompt uses, and a fresh build is how a test proves a newly
+ * registered type reaches the prompt. */
+function registryDigestFresh() {
+  return registryDigest()
+}
+
 // ── safe expression language ───────────────────────────────────────────────
 //
 // Literals, state paths, arithmetic, comparison, boolean logic, array/object
@@ -1387,6 +1446,8 @@ module.exports = {
   TYPE_NAMES,
   ICONS,
   COMMON_PROPS,
+  getRegistryDigest,
+  registryDigestFresh,
   STREAM_EVENTS,
   FUNC_NAMES,
   tokenize,

@@ -13,6 +13,7 @@ import {
   validateApp, computeAll, resolveProps, planAction,
   StreamPlayer, mockStreamEvents, applyStreamEvent,
   TYPES, ALIASES, TYPE_NAMES, LIMITS,
+  getRegistryDigest, registryDigestFresh, FUNC_NAMES, EVENTS, ACTIONS,
 } from '../engine.cjs'
 
 let checks = 0
@@ -120,6 +121,53 @@ check('every registered type accepts its own name', () => {
     const alias = ALIASES[type]
     const canonical = alias ? alias.type : type
     assert.ok(TYPES[canonical], `${type} must resolve to a registered type`)
+  }
+})
+
+// ── prompt digest: the model must be told what the validator accepts ───────
+//
+// A blind probe showed the model knew `ui_render`, its 12 kinds and the `app`
+// fields, but not a single component `type` name — so it could not write a tree
+// that validates. The digest is generated from the registry; these checks keep
+// the prompt honest as the registry grows.
+
+check('the prompt digest names every registered component type and alias', () => {
+  const digest = getRegistryDigest()
+  for (const name of Object.keys(TYPES)) {
+    assert.ok(digest.includes(`${name}(`), `digest is missing type ${name}`)
+  }
+  for (const name of Object.keys(ALIASES)) {
+    assert.ok(digest.includes(`${name}=`), `digest is missing alias ${name}`)
+  }
+})
+
+check('the prompt digest lists each type props exactly as TYPES declares them', () => {
+  const digest = getRegistryDigest()
+  for (const [name, meta] of Object.entries(TYPES)) {
+    const expected = `${name}(${meta.props.join(',')}${meta.children ? ',children' : ''})`
+    assert.ok(digest.includes(expected), `digest disagrees with TYPES for ${name}`)
+  }
+})
+
+check('the prompt digest lists the function table, events and actions', () => {
+  const digest = getRegistryDigest()
+  for (const fn of FUNC_NAMES) assert.ok(digest.includes(fn), `digest is missing function ${fn}`)
+  for (const event of EVENTS) assert.ok(digest.includes(event), `digest is missing event ${event}`)
+  for (const action of ACTIONS) assert.ok(digest.includes(`"${action}"`), `digest is missing action ${action}`)
+})
+
+check('the digest is cached, so it is not rebuilt on every prompt assembly', () => {
+  assert.equal(getRegistryDigest(), getRegistryDigest())
+})
+
+check('a type added to TYPES automatically reaches the prompt', () => {
+  TYPES.probeWidget = { props: ['text'], children: false }
+  try {
+    const fresh = registryDigestFresh()
+    assert.ok(!getRegistryDigest().includes('probeWidget(text)'), 'the cache should not update by itself')
+    assert.ok(fresh.includes('probeWidget(text)'), 'a newly registered type must reach the prompt')
+  } finally {
+    delete TYPES.probeWidget
   }
 })
 
