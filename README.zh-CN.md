@@ -120,8 +120,8 @@ pnpm install --no-frozen-lockfile
 ## 测试
 
 ```bash
-node test/engine.mjs           # 引擎契约：表达式、校验、动作、流式（65 项检查）
-node test/normalize.mjs        # 固定卡片归一化：每种 kind 的正常路径 + 防御（54 项检查）
+node test/engine.mjs           # 引擎契约：表达式、校验、动作、流式（69 项检查）
+node test/normalize.mjs        # 固定卡片 + app/playground 归一化：正常路径 + 防御（78 项检查）
 node test/echarts-chunk.mjs    # 不用浏览器验证生成的 ECharts chunk 可加载
 node test/render-svg.mjs       # ECharts SSR 渲染图表到 test/out，供人眼检查
 node test/render-mermaid.mjs   # 无头渲染 Mermaid 各图族到 test/out-mermaid

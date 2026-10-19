@@ -122,7 +122,9 @@ Rules enforced by `normalizeNode`:
   finite number}` with optional `tone`, `hint`, `x`, and empty series is
   rejected — the same data the fixed-card `chart` kind rejects in `index.js`.
   Every other prop keeps name-level validation over JSON-safe values; a
-  malformed one degrades to that node's fallback at render time.
+  malformed one degrades to that node's fallback at render time (deliberate
+  simplification, `shortcut:` in `engine.cjs`; upgrade path: a per-prop value
+  schema per type).
 - Nesting is at most 8 levels deep (root included); a tree has at most 400
   nodes by default (`opts.maxNodes` overrides per call).
 - Common props: `hidden: true` removes the node at render time; `span` (1–3,
@@ -525,6 +527,7 @@ Representative error messages (all thrown to the model as tool errors):
 | `<path>.id "x" is used twice; ids must be unique` | duplicate id |
 | `<path>.type "x" is not a known component; see the registry in docs/schema.md` | unknown type |
 | `<path>.props.k is not a prop of "t"; allowed: …` | unknown prop/bind key — the message lists the allow-list |
+| `<path>.props.series must be an array of {label, value} points` / `…series[i] must be an object like {label, value}` / `…series[i].label must be a string or number` / `…series[i].value must be a finite number` / `…series must not be empty` | `chart.series` shape check — the one prop validated by value shape, not just by name |
 | `<path>.type "t" does not take children` | children on a leaf |
 | `the tree has more than N nodes; split it or trim the data` | node budget |
 | `<path> nests deeper than 8 levels` | depth budget (JSON data nests deeper than 12) |

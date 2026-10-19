@@ -155,8 +155,8 @@ wrapper; wrap it as `{"spec": {"kind": "app", …}}` or paste it into a
 ## Testing
 
 ```bash
-node test/engine.mjs           # engine contract: expressions, validation, actions, streaming (65 checks)
-node test/normalize.mjs        # fixed-card normalizer: happy paths + guards per kind (54 checks)
+node test/engine.mjs           # engine contract: expressions, validation, actions, streaming (69 checks)
+node test/normalize.mjs        # fixed cards + app/playground normalization: happy paths + guards (78 checks)
 node test/echarts-chunk.mjs    # loads the generated ECharts chunk without a browser
 node test/render-svg.mjs       # ECharts SSR renders charts into test/out for inspection
 node test/render-mermaid.mjs   # headless Mermaid diagram families into test/out-mermaid
