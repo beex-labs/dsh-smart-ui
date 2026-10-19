@@ -1,0 +1,108 @@
+{
+  "title": "世界地理问答闯关",
+  "caption": "四道地理题实时计分，满分后徽章翻出、通过标记可一键置位，重置按钮清零重来。",
+  "state": {
+    "quiz": { "score": 0, "total": 4, "index": -1 },
+    "passed": false
+  },
+  "compute": {
+    "score": "coalesce(quiz.score, 0)",
+    "maxScore": "coalesce(quiz.total, 4)",
+    "isFull": "score == maxScore && score > 0",
+    "statusText": "'得分 ' + score + ' / ' + maxScore + ' · ' + if(isFull, '全部答对！', '继续加油')"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "score-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "kpi-score",
+            "type": "kpi",
+            "props": { "label": "当前得分", "unit": " 分", "tone": "info" },
+            "bind": { "value": "score", "hint": "statusText" }
+          },
+          {
+            "id": "score-progress",
+            "type": "progress",
+            "props": { "variant": "bar", "unit": " 分", "label": "答题进度" },
+            "bind": { "value": "score", "max": "maxScore" }
+          }
+        ]
+      },
+      {
+        "id": "quiz-card",
+        "type": "quiz",
+        "props": {
+          "title": "世界地理快问快答",
+          "questions": [
+            {
+              "question": "世界上最深的湖泊是？",
+              "options": ["贝加尔湖", "苏必利尔湖", "维多利亚湖", "里海"],
+              "answer": 0,
+              "explanation": "贝加尔湖最深处约 1642 米，同时是蓄水量最大的淡水湖。"
+            },
+            {
+              "question": "流经巴黎的河流是？",
+              "options": ["塞纳河", "多瑙河", "莱茵河", "泰晤士河"],
+              "answer": 0,
+              "explanation": "塞纳河穿过巴黎市中心，向西北汇入英吉利海峡。"
+            },
+            {
+              "question": "以下哪个国家的海岸线最长？",
+              "options": ["印度尼西亚", "俄罗斯", "澳大利亚", "加拿大"],
+              "answer": 3,
+              "explanation": "加拿大海岸线约 20.2 万公里，居世界第一，得益于北部群岛与破碎峡湾。"
+            },
+            {
+              "question": "死海位于哪两个国家之间？",
+              "options": ["约旦与以色列", "埃及与苏丹", "土耳其与希腊", "伊拉克与伊朗"],
+              "answer": 0,
+              "explanation": "死海位于约旦与以色列交界，湖面是地球陆地最低点（约 -430 米）。"
+            }
+          ]
+        },
+        "on": {
+          "change": { "action": "set", "path": "quiz" },
+          "click": { "action": "set", "path": "quiz", "value": { "score": 0, "total": 4, "index": -1 } }
+        }
+      },
+      {
+        "id": "pass-badge",
+        "type": "badge",
+        "props": { "text": "🎉 满分通过！徽章随成绩翻出", "tone": "success" },
+        "bind": { "hidden": "isFull == false" }
+      },
+      {
+        "id": "status-note",
+        "type": "text",
+        "props": { "tone": "info" },
+        "bind": { "text": "statusText", "hidden": "isFull == true" }
+      },
+      {
+        "id": "mark-switch",
+        "type": "switch",
+        "props": { "label": "将本次成绩标记为通过（按当前得分判定）" },
+        "on": {
+          "change": { "action": "set", "path": "passed", "expr": "isFull == true" }
+        }
+      },
+      {
+        "id": "pass-note",
+        "type": "caption",
+        "bind": { "text": "'通过标记 passed = ' + if(passed, 'true', 'false')" }
+      },
+      {
+        "id": "reset-btn",
+        "type": "button",
+        "props": { "label": "重置通过标记", "icon": "refresh", "variant": "ghost" },
+        "on": { "click": { "action": "set", "path": "passed", "value": false } }
+      }
+    ]
+  }
+}

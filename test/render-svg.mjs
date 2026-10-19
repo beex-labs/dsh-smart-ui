@@ -1,5 +1,5 @@
 /**
- * Render the Smart UI chart/diagram options to real SVG via ECharts SSR.
+ * Render the Intelligent UI chart/diagram options to real SVG via ECharts SSR.
  *
  * The live DSH page is not reachable from a test script, so this harness is how
  * the visual layer gets checked: it builds the SAME option objects `client.js`
@@ -171,7 +171,7 @@ function render(name, option, width, height) {
   return { file, svg, nodes }
 }
 
-console.log('rendering Smart UI options through ECharts SSR\n')
+console.log('rendering Intelligent UI options through ECharts SSR\n')
 
 const results = {}
 results.bar = render('chart-bar', chartOption({

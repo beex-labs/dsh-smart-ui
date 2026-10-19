@@ -1,0 +1,152 @@
+{
+  "title": "理财复利模拟器",
+  "caption": "本金/年化/年限/月定投四个输入实时演算终值与收益，折线图为逐年资产，进度条对比目标，按钮演示 call 动作的“未连接”提示。",
+  "state": {
+    "principal": 100000,
+    "rate": 0.06,
+    "years": 6,
+    "monthly": 2000,
+    "goal": 500000
+  },
+  "compute": {
+    "g1": "1 + rate",
+    "g2": "g1 * g1",
+    "g3": "g2 * g1",
+    "g4": "g3 * g1",
+    "g5": "g4 * g1",
+    "g6": "g5 * g1",
+    "g7": "g6 * g1",
+    "v1": "principal * g1 + monthly * 12 * (g1 - 1) / rate",
+    "v2": "principal * g2 + monthly * 12 * (g2 - 1) / rate",
+    "v3": "principal * g3 + monthly * 12 * (g3 - 1) / rate",
+    "v4": "principal * g4 + monthly * 12 * (g4 - 1) / rate",
+    "v5": "principal * g5 + monthly * 12 * (g5 - 1) / rate",
+    "v6": "principal * g6 + monthly * 12 * (g6 - 1) / rate",
+    "v7": "principal * g7 + monthly * 12 * (g7 - 1) / rate",
+    "s5": "[{label: '第0年', value: principal, x: 0}, {label: '第1年', value: v1, x: 1}, {label: '第2年', value: v2, x: 2}, {label: '第3年', value: v3, x: 3}, {label: '第4年', value: v4, x: 4}, {label: '第5年', value: v5, x: 5}]",
+    "s6": "[{label: '第0年', value: principal, x: 0}, {label: '第1年', value: v1, x: 1}, {label: '第2年', value: v2, x: 2}, {label: '第3年', value: v3, x: 3}, {label: '第4年', value: v4, x: 4}, {label: '第5年', value: v5, x: 5}, {label: '第6年', value: v6, x: 6}]",
+    "s7": "[{label: '第0年', value: principal, x: 0}, {label: '第1年', value: v1, x: 1}, {label: '第2年', value: v2, x: 2}, {label: '第3年', value: v3, x: 3}, {label: '第4年', value: v4, x: 4}, {label: '第5年', value: v5, x: 5}, {label: '第6年', value: v6, x: 6}, {label: '第7年', value: v7, x: 7}]",
+    "series": "if(years == 5, s5, if(years == 6, s6, s7))",
+    "fv": "series[len(series) - 1].value",
+    "contributed": "principal + monthly * 12 * years",
+    "gains": "fv - contributed",
+    "roiPct": "pct(gains / contributed, 1)",
+    "goalPct": "pct(fv / goal, 1)"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "kpi-row",
+        "type": "row",
+        "props": { "gap": 12, "wrap": true },
+        "children": [
+          {
+            "id": "kpi-fv",
+            "type": "kpi",
+            "props": { "label": "期末终值", "unit": " 元", "tone": "info" },
+            "bind": { "value": "round(fv, 0)", "hint": "'年化 ' + pct(rate, 1) + ' · ' + years + ' 年复利'" }
+          },
+          {
+            "id": "kpi-in",
+            "type": "kpi",
+            "props": { "label": "累计投入", "unit": " 元" },
+            "bind": { "value": "round(contributed, 0)", "hint": "'本金 + 月供 × 12 × 年限'" }
+          },
+          {
+            "id": "kpi-gain",
+            "type": "kpi",
+            "props": { "label": "投资收益", "unit": " 元", "tone": "success" },
+            "bind": { "value": "round(gains, 0)", "delta": "round(gains, 0)" }
+          },
+          {
+            "id": "kpi-roi",
+            "type": "kpi",
+            "props": { "label": "收益率", "hint": "收益 ÷ 累计投入" },
+            "bind": { "value": "roiPct" }
+          }
+        ]
+      },
+      {
+        "id": "param-card",
+        "type": "card",
+        "props": { "title": "投资参数", "subtitle": "年金终值：FV = P·(1+r)^n + M·12·((1+r)^n − 1)/r" },
+        "children": [
+          {
+            "id": "param-row",
+            "type": "row",
+            "props": { "gap": 12, "wrap": true },
+            "children": [
+              {
+                "id": "principal-input",
+                "type": "input",
+                "props": { "label": "初始本金 (元)", "type": "number", "min": 0, "step": 1000, "value": 100000 },
+                "bind": { "value": "principal" },
+                "on": { "input": { "action": "set", "path": "principal" } }
+              },
+              {
+                "id": "rate-slider",
+                "type": "slider",
+                "props": { "label": "年化收益率（小数，0.06 = 6%）", "min": 0.01, "max": 0.12, "step": 0.005, "value": 0.06 },
+                "bind": { "value": "rate" },
+                "on": { "change": { "action": "set", "path": "rate" } }
+              },
+              {
+                "id": "years-slider",
+                "type": "slider",
+                "props": { "label": "投资年限", "min": 5, "max": 7, "step": 1, "unit": " 年", "value": 6 },
+                "bind": { "value": "years" },
+                "on": { "change": { "action": "set", "path": "years" } }
+              },
+              {
+                "id": "monthly-input",
+                "type": "input",
+                "props": { "label": "每月定投 (元)", "type": "number", "min": 0, "step": 100, "value": 2000 },
+                "bind": { "value": "monthly" },
+                "on": { "input": { "action": "set", "path": "monthly" } }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "goal-progress",
+        "type": "progress",
+        "props": { "variant": "bar", "label": "目标达成度", "unit": " 元" },
+        "bind": { "value": "round(fv, 0)", "max": "goal", "label": "'目标达成度 · ' + goalPct" }
+      },
+      {
+        "id": "growth-chart",
+        "type": "lineChart",
+        "props": { "unit": " 元", "height": 260, "label": "资产增长曲线（含每年末定投累计）" },
+        "bind": { "series": "series" }
+      },
+      {
+        "id": "assumptions",
+        "type": "stepper",
+        "props": {
+          "steps": [
+            { "label": "收益率固定", "detail": "按输入的年化利率每年复利计息，不随市场波动" },
+            { "label": "月末定投", "detail": "每月投入固定金额，按期末年金终值公式累计" },
+            { "label": "不含税费", "detail": "未计入利息税、申购赎回手续费与通胀" },
+            { "label": "目标对比", "detail": "进度条以 goal 为分母，达成度 = 终值 ÷ 目标" }
+          ]
+        }
+      },
+      {
+        "id": "call-btn",
+        "type": "button",
+        "props": { "label": "拉取实时行情（call · 未连接服务）", "icon": "refresh" },
+        "on": {
+          "click": {
+            "action": "call",
+            "service": "market-rates",
+            "payload": { "symbol": "SPX", "currency": "CNY" }
+          }
+        }
+      }
+    ]
+  }
+}

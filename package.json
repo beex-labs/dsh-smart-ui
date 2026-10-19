@@ -1,14 +1,15 @@
 {
-  "name": "dsh-smart-ui",
+  "name": "dsh-intelligent-ui",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
   "type": "module",
-  "description": "Render interactive UI — comparisons, charts, and calculators — inside the conversation.",
+  "description": "Generative UI for DSH conversations: the model writes a JSON UI schema and the page renders a live, state-bound interactive interface — cards, charts, forms, maps, micro-apps.",
   "icon": "./icon.svg",
   "exports": {
     ".": "./index.js",
     "./client": "./client.js",
+    "./client.engine.js": "./client.engine.js",
     "./client.echarts.js": "./client.echarts.js",
     "./client.mermaid.js": "./client.mermaid.js",
     "./package.json": "./package.json",

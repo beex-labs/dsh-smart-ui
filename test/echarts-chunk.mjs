@@ -19,7 +19,7 @@ const here = dirname(fileURLToPath(import.meta.url))
 const chunkPath = join(here, '..', 'client.echarts.js')
 const source = readFileSync(chunkPath, 'utf8')
 
-const CHUNK_ID = 'dsh-smart-ui/client.echarts.js'
+const CHUNK_ID = 'dsh-intelligent-ui/client.echarts.js'
 
 let checks = 0
 const check = (name, fn) => { fn(); checks += 1; console.log(`ok  ${name}`) }

@@ -63,7 +63,7 @@ const shot = join(outDir, '_diagrams.png')
 // The browser profile goes to the OS temp directory: Chrome writes tens of
 // megabytes of caches, history and cookie databases into it, none of which
 // belongs in the plugin directory or in version control.
-const profile = join(tmpdir(), 'dsh-smart-ui-shot-profile')
+const profile = join(tmpdir(), 'dsh-intelligent-ui-shot-profile')
 const script = `
 $p = Start-Process -FilePath ${JSON.stringify(BROWSER)} -ArgumentList @(
   '--headless=new','--disable-gpu','--no-sandbox','--no-first-run','--hide-scrollbars',

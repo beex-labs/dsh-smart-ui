@@ -1,0 +1,137 @@
+{
+  "title": "销售分析仪表盘",
+  "caption": "流量/转化/客单价三个输入驱动全部指标，分段控件切换营收/订单/件数三条曲线，表格可搜索、筛选、导出。",
+  "state": {
+    "segment": "revenue",
+    "traffic": 1000,
+    "conversion": 3.2,
+    "avgOrder": 260
+  },
+  "compute": {
+    "weeklyBase": "traffic * 7 * conversion / 100 * avgOrder",
+    "weeklyOrders": "traffic * 7 * conversion / 100",
+    "weeklyUnits": "weeklyOrders * 1.4",
+    "revSeries": "[{label: 'W1', value: round(weeklyBase * 0.86, 0), x: 1}, {label: 'W2', value: round(weeklyBase * 0.92, 0), x: 2}, {label: 'W3', value: round(weeklyBase * 0.88, 0), x: 3}, {label: 'W4', value: round(weeklyBase * 1, 0), x: 4}, {label: 'W5', value: round(weeklyBase * 1.08, 0), x: 5}, {label: 'W6', value: round(weeklyBase * 1.05, 0), x: 6}, {label: 'W7', value: round(weeklyBase * 1.12, 0), x: 7}, {label: 'W8', value: round(weeklyBase * 1.18, 0), x: 8}, {label: 'W9', value: round(weeklyBase * 1.15, 0), x: 9}, {label: 'W10', value: round(weeklyBase * 1.25, 0), x: 10}]",
+    "ordSeries": "[{label: 'W1', value: round(weeklyOrders * 0.86, 0), x: 1}, {label: 'W2', value: round(weeklyOrders * 0.92, 0), x: 2}, {label: 'W3', value: round(weeklyOrders * 0.88, 0), x: 3}, {label: 'W4', value: round(weeklyOrders * 1, 0), x: 4}, {label: 'W5', value: round(weeklyOrders * 1.08, 0), x: 5}, {label: 'W6', value: round(weeklyOrders * 1.05, 0), x: 6}, {label: 'W7', value: round(weeklyOrders * 1.12, 0), x: 7}, {label: 'W8', value: round(weeklyOrders * 1.18, 0), x: 8}, {label: 'W9', value: round(weeklyOrders * 1.15, 0), x: 9}, {label: 'W10', value: round(weeklyOrders * 1.25, 0), x: 10}]",
+    "unitSeries": "[{label: 'W1', value: round(weeklyUnits * 0.86, 0), x: 1}, {label: 'W2', value: round(weeklyUnits * 0.92, 0), x: 2}, {label: 'W3', value: round(weeklyUnits * 0.88, 0), x: 3}, {label: 'W4', value: round(weeklyUnits * 1, 0), x: 4}, {label: 'W5', value: round(weeklyUnits * 1.08, 0), x: 5}, {label: 'W6', value: round(weeklyUnits * 1.05, 0), x: 6}, {label: 'W7', value: round(weeklyUnits * 1.12, 0), x: 7}, {label: 'W8', value: round(weeklyUnits * 1.18, 0), x: 8}, {label: 'W9', value: round(weeklyUnits * 1.15, 0), x: 9}, {label: 'W10', value: round(weeklyUnits * 1.25, 0), x: 10}]",
+    "chartSeries": "if(segment == 'revenue', revSeries, if(segment == 'orders', ordSeries, unitSeries))",
+    "total": "sum(pluck(chartSeries, 'value'))",
+    "avgWeek": "round(avg(pluck(chartSeries, 'value')), 0)",
+    "peak": "max(chartSeries[0].value, chartSeries[1].value, chartSeries[2].value, chartSeries[3].value, chartSeries[4].value, chartSeries[5].value, chartSeries[6].value, chartSeries[7].value, chartSeries[8].value, chartSeries[9].value)",
+    "growthPct": "pct((chartSeries[9].value - chartSeries[0].value) / chartSeries[0].value, 1)",
+    "unitLabel": "if(segment == 'revenue', '元', if(segment == 'orders', '单', '件'))",
+    "rows": "[{region: '华东', channel: '线上', revenue: round(weeklyBase * 2.1, 0), orders: round(weeklyOrders * 2.1, 0), aov: round(avgOrder * 1.02, 0)}, {region: '华南', channel: '线上', revenue: round(weeklyBase * 1.7, 0), orders: round(weeklyOrders * 1.75, 0), aov: round(avgOrder * 0.98, 0)}, {region: '华北', channel: '门店', revenue: round(weeklyBase * 1.4, 0), orders: round(weeklyOrders * 1.35, 0), aov: round(avgOrder * 1.05, 0)}, {region: '西南', channel: '门店', revenue: round(weeklyBase * 1.1, 0), orders: round(weeklyOrders * 1.15, 0), aov: round(avgOrder * 0.95, 0)}, {region: '华中', channel: '分销', revenue: round(weeklyBase * 0.95, 0), orders: round(weeklyOrders * 1, 0), aov: round(avgOrder * 0.93, 0)}, {region: '东北', channel: '分销', revenue: round(weeklyBase * 0.7, 0), orders: round(weeklyOrders * 0.75, 0), aov: round(avgOrder * 0.9, 0)}, {region: '西北', channel: '门店', revenue: round(weeklyBase * 0.55, 0), orders: round(weeklyOrders * 0.6, 0), aov: round(avgOrder * 0.88, 0)}, {region: '海外', channel: '线上', revenue: round(weeklyBase * 1.25, 0), orders: round(weeklyOrders * 1.1, 0), aov: round(avgOrder * 1.12, 0)}]"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "controls",
+        "type": "row",
+        "props": { "gap": 12, "wrap": true },
+        "children": [
+          {
+            "id": "traffic-slider",
+            "type": "slider",
+            "props": { "label": "日均流量", "min": 500, "max": 5000, "step": 100, "unit": " UV", "value": 1000 },
+            "bind": { "value": "traffic" },
+            "on": { "change": { "action": "set", "path": "traffic" } }
+          },
+          {
+            "id": "conversion-slider",
+            "type": "slider",
+            "props": { "label": "转化率", "min": 0.5, "max": 8, "step": 0.1, "unit": "%", "value": 3.2 },
+            "bind": { "value": "conversion" },
+            "on": { "change": { "action": "set", "path": "conversion" } }
+          },
+          {
+            "id": "aov-input",
+            "type": "input",
+            "props": { "label": "客单价 (元)", "type": "number", "min": 1, "step": 10, "value": 260 },
+            "bind": { "value": "avgOrder" },
+            "on": { "input": { "action": "set", "path": "avgOrder" } }
+          },
+          {
+            "id": "segment-switch",
+            "type": "segmented",
+            "props": {
+              "label": "趋势指标",
+              "value": "revenue",
+              "options": [
+                { "label": "营收", "value": "revenue" },
+                { "label": "订单量", "value": "orders" },
+                { "label": "件数", "value": "units" }
+              ]
+            },
+            "on": { "change": { "action": "set", "path": "segment" } }
+          }
+        ]
+      },
+      {
+        "id": "kpi-row",
+        "type": "row",
+        "props": { "gap": 12, "wrap": true },
+        "children": [
+          {
+            "id": "kpi-total",
+            "type": "kpi",
+            "props": { "label": "10 周合计", "hint": "周度序列求和" },
+            "bind": { "value": "total", "unit": "' ' + unitLabel" }
+          },
+          {
+            "id": "kpi-avg",
+            "type": "kpi",
+            "props": { "label": "周均值" },
+            "bind": { "value": "avgWeek", "unit": "' ' + unitLabel" }
+          },
+          {
+            "id": "kpi-peak",
+            "type": "kpi",
+            "props": { "label": "峰值周" },
+            "bind": { "value": "peak", "unit": "' ' + unitLabel" }
+          },
+          {
+            "id": "kpi-growth",
+            "type": "kpi",
+            "props": { "label": "首尾周增幅", "tone": "success" },
+            "bind": { "value": "growthPct" }
+          }
+        ]
+      },
+      {
+        "id": "trend-chart",
+        "type": "areaChart",
+        "props": { "height": 260 },
+        "bind": {
+          "series": "chartSeries",
+          "unit": "' ' + unitLabel",
+          "label": "'近 10 周趋势 · ' + if(segment == 'revenue', '营收', if(segment == 'orders', '订单量', '件数'))"
+        }
+      },
+      {
+        "id": "region-table",
+        "type": "dataTable",
+        "props": {
+          "columns": [
+            { "key": "region", "label": "区域" },
+            { "key": "channel", "label": "渠道" },
+            { "key": "revenue", "label": "营收 (元)", "align": "right" },
+            { "key": "orders", "label": "订单 (单)", "align": "right" },
+            { "key": "aov", "label": "客单价 (元)", "align": "right" }
+          ],
+          "rows": [],
+          "pageSize": 5,
+          "search": true,
+          "filterKey": "channel",
+          "selectable": true,
+          "exportable": true,
+          "caption": "区域明细随上方输入实时换算；可按渠道筛选、勾选行、导出 CSV",
+          "emptyText": "没有匹配的行"
+        },
+        "bind": { "rows": "rows" }
+      }
+    ]
+  }
+}

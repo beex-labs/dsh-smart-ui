@@ -1,0 +1,180 @@
+{
+  "title": "京都旅行规划助手",
+  "caption": "拖动人数/预算/天数，KPI、费用构成图与逐日行程表实时重算，地图与地点列表共享选中状态。",
+  "state": {
+    "people": 4,
+    "budget": 32000,
+    "days": 5,
+    "startDate": "2026-04-10",
+    "selected": "fushimi"
+  },
+  "compute": {
+    "perPerson": "budget / people",
+    "dailyBudget": "budget / days",
+    "lodging": "round(budget * 0.38, 0)",
+    "food": "round(budget * 0.25, 0)",
+    "transport": "round(budget * 0.15, 0)",
+    "tickets": "round(budget * 0.12, 0)",
+    "buffer": "budget - lodging - food - transport - tickets",
+    "costSeries": "[{label: '住宿', value: lodging}, {label: '餐饮', value: food}, {label: '交通', value: transport}, {label: '门票', value: tickets}, {label: '备用金', value: buffer}]",
+    "dayPlan": "[{day: 'D1', area: '京都站周边', plan: '伏见稻荷千本鸟居、东福寺', cost: round((lodging + food) / days + tickets * 0.3, 0)}, {day: 'D2', area: '东山', plan: '清水寺、二年坂、八坂神社', cost: round((lodging + food) / days + tickets * 0.25 + transport * 0.2, 0)}, {day: 'D3', area: '岚山', plan: '竹林小径、天龙寺、渡月桥', cost: round((lodging + food) / days + tickets * 0.2 + transport * 0.25, 0)}, {day: 'D4', area: '洛北', plan: '金阁寺、龙安寺、北野天满宫', cost: round((lodging + food) / days + tickets * 0.15 + transport * 0.3, 0)}, {day: 'D5', area: '市中心', plan: '锦市场、京都御苑、四条河原町', cost: round((lodging + food) / days + tickets * 0.1 + transport * 0.25, 0)}]",
+    "spots": "[{id: 'fushimi', name: '伏见稻荷大社', lat: 34.9671, lng: 135.7727, label: '千本鸟居'}, {id: 'kiyomizu', name: '清水寺', lat: 34.9949, lng: 135.785, label: '清水舞台'}, {id: 'arashiyama', name: '岚山竹林', lat: 35.017, lng: 135.671, label: '竹林小径'}, {id: 'kinkakuji', name: '金阁寺', lat: 35.0394, lng: 135.7292, label: '金阁'}, {id: 'nishiki', name: '锦市场', lat: 35.005, lng: 135.7649, label: '京都厨房'}]",
+    "selectedName": "if(selected == 'fushimi', '伏见稻荷大社', if(selected == 'kiyomizu', '清水寺', if(selected == 'arashiyama', '岚山竹林', if(selected == 'kinkakuji', '金阁寺', '锦市场'))))",
+    "selectedNote": "if(selected == 'fushimi', '清晨 6 点出发可避开人流，登顶约 2 小时', if(selected == 'kiyomizu', '樱花季夜间特别参拜，需提前购票', if(selected == 'arashiyama', '建议上午前往，竹林步道约 40 分钟', if(selected == 'kinkakuji', '晴天倒影最佳，游览约 1 小时', '午餐首选，边逛边吃约 2 小时'))))"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "input-card",
+        "type": "card",
+        "props": { "title": "行程输入", "subtitle": "改动任一输入，右侧 KPI 与图表即时联动" },
+        "children": [
+          {
+            "id": "input-row",
+            "type": "row",
+            "props": { "gap": 12, "wrap": true },
+            "children": [
+              {
+                "id": "people-slider",
+                "type": "slider",
+                "props": { "label": "出行人数", "min": 1, "max": 12, "step": 1, "unit": " 人", "value": 4 },
+                "bind": { "value": "people" },
+                "on": { "change": { "action": "set", "path": "people" } }
+              },
+              {
+                "id": "budget-input",
+                "type": "input",
+                "props": { "label": "总预算 (元)", "type": "number", "min": 0, "step": 500, "value": 32000, "help": "人均预算 = 总预算 ÷ 人数" },
+                "bind": { "value": "budget" },
+                "on": { "input": { "action": "set", "path": "budget" } }
+              },
+              {
+                "id": "days-slider",
+                "type": "slider",
+                "props": { "label": "游玩天数", "min": 3, "max": 7, "step": 1, "unit": " 天", "value": 5 },
+                "bind": { "value": "days" },
+                "on": { "change": { "action": "set", "path": "days" } }
+              },
+              {
+                "id": "start-date",
+                "type": "datePicker",
+                "props": { "label": "出发日期", "value": "2026-04-10", "min": "2026-01-01", "max": "2026-12-31", "name": "startDate" },
+                "bind": { "value": "startDate" },
+                "on": { "change": { "action": "set", "path": "startDate" } }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "kpi-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "kpi-per-person",
+            "type": "kpi",
+            "props": { "label": "人均预算", "unit": " 元/人", "hint": "总预算 ÷ 人数" },
+            "bind": { "value": "round(perPerson, 0)" }
+          },
+          {
+            "id": "kpi-daily",
+            "type": "kpi",
+            "props": { "label": "日均预算", "unit": " 元/天", "hint": "总预算 ÷ 天数" },
+            "bind": { "value": "round(dailyBudget, 0)" }
+          },
+          {
+            "id": "kpi-buffer",
+            "type": "kpi",
+            "props": { "label": "备用金", "unit": " 元", "hint": "预算减去住宿/餐饮/交通/门票" },
+            "bind": { "value": "buffer", "delta": "round(buffer - budget * 0.1, 0)" }
+          }
+        ]
+      },
+      {
+        "id": "map-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "kyoto-map",
+            "type": "map",
+            "props": {
+              "places": [
+                { "id": "fushimi", "name": "伏见稻荷大社", "lat": 34.9671, "lng": 135.7727, "label": "千本鸟居" },
+                { "id": "kiyomizu", "name": "清水寺", "lat": 34.9949, "lng": 135.785, "label": "清水舞台" },
+                { "id": "arashiyama", "name": "岚山竹林", "lat": 35.017, "lng": 135.671, "label": "竹林小径" },
+                { "id": "kinkakuji", "name": "金阁寺", "lat": 35.0394, "lng": 135.7292, "label": "金阁" },
+                { "id": "nishiki", "name": "锦市场", "lat": 35.005, "lng": 135.7649, "label": "京都厨房" }
+              ],
+              "height": 280,
+              "caption": "点击地图标记或右侧列表切换景点（共享 selected 状态）"
+            },
+            "bind": { "places": "spots", "selected": "selected" },
+            "on": { "change": { "action": "set", "path": "selected" } }
+          },
+          {
+            "id": "spot-panel",
+            "type": "column",
+            "props": { "gap": 8 },
+            "children": [
+              {
+                "id": "spot-list",
+                "type": "places",
+                "props": { "label": "候选景点" },
+                "bind": { "places": "spots", "selected": "selected" },
+                "on": { "change": { "action": "set", "path": "selected" } }
+              },
+              {
+                "id": "spot-name",
+                "type": "text",
+                "props": { "tone": "info", "size": "lg" },
+                "bind": { "text": "'当前选中 · ' + selectedName" }
+              },
+              {
+                "id": "spot-note",
+                "type": "caption",
+                "bind": { "text": "selectedNote" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "data-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "cost-chart",
+            "type": "donutChart",
+            "props": { "label": "费用构成（按预算拆分）", "unit": " 元", "height": 260 },
+            "bind": { "series": "costSeries" }
+          },
+          {
+            "id": "itinerary-table",
+            "type": "dataTable",
+            "props": {
+              "columns": [
+                { "key": "day", "label": "日程" },
+                { "key": "area", "label": "区域" },
+                { "key": "plan", "label": "当日安排" },
+                { "key": "cost", "label": "当日预算 (元)", "align": "right" }
+              ],
+              "rows": [],
+              "pageSize": 5,
+              "search": true,
+              "filterKey": "area",
+              "caption": "逐日行程按预算与天数实时换算",
+              "emptyText": "暂无行程"
+            },
+            "bind": { "rows": "dayPlan" }
+          }
+        ]
+      }
+    ]
+  }
+}

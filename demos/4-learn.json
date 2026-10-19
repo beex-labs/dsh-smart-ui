@@ -1,0 +1,133 @@
+{
+  "title": "勾股定理互动讲解",
+  "caption": "拖动两条直角边，SVG 三角形与 c²、面积同步重算；公式节点、三步讲解与速记卡配套使用。",
+  "state": {
+    "a": 3,
+    "b": 4
+  },
+  "compute": {
+    "a2": "a * a",
+    "b2": "b * b",
+    "c2": "a2 + b2",
+    "area": "a * b / 2",
+    "triShapes": "[{type: 'rect', x: 60, y: 184, width: 16, height: 16, fill: 'none', stroke: 'currentColor', strokeWidth: 2}, {type: 'line', x1: 60, y1: 200, x2: 60 + a * 40, y2: 200, stroke: 'currentColor', strokeWidth: 3}, {type: 'line', x1: 60, y1: 200, x2: 60, y2: 200 - b * 40, stroke: 'currentColor', strokeWidth: 3}, {type: 'line', x1: 60, y1: 200, x2: 60 + a * 40, y2: 200 - b * 40, stroke: 'currentColor', strokeWidth: 3}, {type: 'circle', cx: 60, cy: 200, r: 4, fill: 'currentColor'}, {type: 'text', x: 60 + a * 20, y: 222, textAnchor: 'middle', fontSize: 13, fill: 'currentColor', text: 'a = ' + a}, {type: 'text', x: 36, y: 200 - b * 20, textAnchor: 'middle', fontSize: 13, fill: 'currentColor', text: 'b = ' + b}, {type: 'text', x: 70 + a * 20, y: 190 - b * 20, textAnchor: 'start', fontSize: 13, fill: 'currentColor', text: 'c² = ' + c2}]"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "side-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "a-slider",
+            "type": "slider",
+            "props": { "label": "直角边 a", "min": 1, "max": 5, "step": 1, "unit": " 单位", "value": 3 },
+            "bind": { "value": "a" },
+            "on": { "change": { "action": "set", "path": "a" } }
+          },
+          {
+            "id": "b-slider",
+            "type": "slider",
+            "props": { "label": "直角边 b", "min": 1, "max": 5, "step": 1, "unit": " 单位", "value": 4 },
+            "bind": { "value": "b" },
+            "on": { "change": { "action": "set", "path": "b" } }
+          }
+        ]
+      },
+      {
+        "id": "triangle",
+        "type": "svg",
+        "props": {
+          "viewBox": "0 0 400 240",
+          "caption": "直角三角形（坐标按 40px/单位实时缩放）"
+        },
+        "bind": { "shapes": "triShapes" }
+      },
+      {
+        "id": "kpi-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "kpi-c2",
+            "type": "kpi",
+            "props": { "label": "斜边平方 c² = a² + b²", "tone": "info" },
+            "bind": { "value": "c2", "hint": "'a² = ' + a2 + ' ， b² = ' + b2" }
+          },
+          {
+            "id": "kpi-area",
+            "type": "kpi",
+            "props": { "label": "三角形面积 S = ab/2", "unit": " 平方单位" },
+            "bind": { "value": "area" }
+          }
+        ]
+      },
+      {
+        "id": "formula",
+        "type": "math",
+        "props": {
+          "text": "c = \\sqrt{a^2 + b^2} · S_{△} = \\frac{ab}{2} · sinθ = \\frac{a}{c}",
+          "display": true
+        }
+      },
+      {
+        "id": "explain-tabs",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "step-1",
+            "type": "tab",
+            "props": { "label": "1 · 认识三边" },
+            "children": [
+              {
+                "id": "step-1-text",
+                "type": "text",
+                "props": { "text": "直角三角形的两条直角边 a、b 夹一个 90° 角，斜边 c 是直角对面最长的一边。上方图形中方块标记直角，滑块改变 a、b 时斜边随之变长。" }
+              }
+            ]
+          },
+          {
+            "id": "step-2",
+            "type": "tab",
+            "props": { "label": "2 · 面积拼图" },
+            "children": [
+              {
+                "id": "step-2-text",
+                "type": "markdown",
+                "props": { "text": "把四个全等直角三角形拼进一个大正方形，剩下的小正方形边长恰好是 c。于是 **a² + b² = c²** —— 这就是勾股定理的面积证明。" }
+              }
+            ]
+          },
+          {
+            "id": "step-3",
+            "type": "tab",
+            "props": { "label": "3 · 公式应用" },
+            "children": [
+              {
+                "id": "step-3-text",
+                "type": "text",
+                "props": { "text": "已知两边求第三边：a=3、b=4 时 c²=25，c=5。注意滑块只算 c²，开方可留给计算器；面积 S = ab/2 直接由两条直角边得到。" }
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "cards",
+        "type": "flashcard",
+        "props": {
+          "title": "三张速记卡",
+          "cards": [
+            { "front": "勾股定理的表达式？", "back": "a² + b² = c²，其中 c 为斜边。" },
+            { "front": "最常见的整数勾股数？", "back": "(3, 4, 5)、(5, 12, 13)、(8, 15, 17)。" },
+            { "front": "直角三角形面积怎么求？", "back": "S = 两条直角边乘积的一半 = ab/2。" }
+          ]
+        }
+      }
+    ]
+  }
+}

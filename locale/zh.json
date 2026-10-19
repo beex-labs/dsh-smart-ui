@@ -1,6 +1,6 @@
 {
   "meta": {
     "title": "智能界面",
-    "description": "在对话中渲染交互式卡片、图表与计算工具。"
+    "description": "对话内的生成式界面：模型输出 JSON UI Schema，页面渲染可交互、状态联动的实时界面。"
   }
 }

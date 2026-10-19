@@ -40,7 +40,7 @@ function dumpDom(htmlPath) {
   // The browser profile goes to the OS temp directory: Chrome writes tens of
   // megabytes of caches, history and cookie databases into it, none of which
   // belongs in the plugin directory or in version control.
-  const profile = join(tmpdir(), 'dsh-smart-ui-render-profile')
+  const profile = join(tmpdir(), 'dsh-intelligent-ui-render-profile')
   const outFile = join(outDir, 'dom.txt')
   const errFile = join(outDir, 'err.txt')
   const script = `

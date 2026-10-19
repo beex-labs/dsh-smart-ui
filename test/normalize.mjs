@@ -1,5 +1,5 @@
 /**
- * Self-check for the Smart UI spec normalizer.
+ * Self-check for the Intelligent UI spec normalizer.
  *
  * Run: node test/normalize.mjs
  *
@@ -281,5 +281,120 @@ check('drops a blank step detail', () => {
 
 throws('still rejects a blank required field', { kind: 'note', text: '   ' })
 throws('rejects a non-string optional field', { kind: 'note', text: 'x', title: 7 })
+
+// ── app: the generative UI schema ──────────────────────────────────────────
+// The Host stores exactly what `validateApp` returns, so the normalized spec
+// must survive a second pass unchanged.
+
+const APP = {
+  kind: 'app',
+  title: 'Trip',
+  state: { budget: 8000, people: 2 },
+  compute: { per: 'budget / people' },
+  tree: {
+    id: 'root', type: 'column',
+    children: [
+      { id: 'k', type: 'kpi', props: { label: 'Per person' }, bind: { value: 'per' } },
+      {
+        id: 's', type: 'slider', props: { label: 'People', min: 1, max: 8 },
+        bind: { value: 'people' },
+        on: { change: { action: 'set', path: 'people' } },
+      },
+    ],
+  },
+  stream: { mode: 'mock', intervalMs: 40 },
+}
+
+check('app validates and round-trips unchanged', () => {
+  const spec = normalizeSpec(APP)
+  assert.equal(spec.kind, 'app')
+  assert.equal(spec.title, 'Trip')
+  assert.equal(spec.stream.intervalMs, 40)
+  assert.deepEqual(normalizeSpec(spec), spec)
+})
+
+check('a bare set action normalizes to the event value', () => {
+  const spec = normalizeSpec(APP)
+  assert.deepEqual(spec.tree.children[1].on.change, { action: 'set', path: 'people', value: { $event: true } })
+})
+
+check('app normalizes a chart alias and defaults container children', () => {
+  const spec = normalizeSpec({
+    kind: 'app',
+    tree: {
+      id: 'root', type: 'row',
+      children: [{ id: 'c', type: 'donutChart', props: { series: [{ label: 'a', value: 1 }] } }],
+    },
+  })
+  assert.equal(spec.tree.children[0].type, 'chart')
+  assert.equal(spec.tree.children[0].props.variant, 'donut')
+  assert.deepEqual(normalizeSpec({ kind: 'app', tree: { id: 'root', type: 'box' } }).tree.children, [])
+})
+
+const nest = (depth) => (depth <= 1
+  ? { id: 'n1', type: 'text', props: { text: 'deep' } }
+  : { id: `n${depth}`, type: 'box', children: [nest(depth - 1)] })
+
+check('app accepts a tree at the depth limit', () => {
+  assert.equal(normalizeSpec({ kind: 'app', tree: nest(8) }).kind, 'app')
+})
+
+throws('rejects an unknown app node type', { kind: 'app', tree: { id: 'r', type: 'nope' } })
+throws('rejects an unknown prop on a node', { kind: 'app', tree: { id: 'r', type: 'text', props: { nope: 1 } } })
+throws('rejects an unknown bind target', { kind: 'app', tree: { id: 'r', type: 'text', bind: { nope: '1' } } })
+throws('rejects an unparseable bind expression', { kind: 'app', tree: { id: 'r', type: 'text', bind: { text: '1 +' } } })
+throws('rejects children on a leaf node', { kind: 'app', tree: { id: 'r', type: 'text', children: [{ id: 'c', type: 'text' }] } })
+throws('rejects duplicate node ids', {
+  kind: 'app',
+  tree: { id: 'r', type: 'column', children: [{ id: 'd', type: 'text' }, { id: 'd', type: 'text' }] },
+})
+throws('rejects a tree nested past the depth limit', { kind: 'app', tree: nest(9) })
+throws('rejects an unknown action verb', {
+  kind: 'app', tree: { id: 'r', type: 'button', on: { click: { action: 'jump' } } },
+})
+throws('rejects an unknown event name', {
+  kind: 'app', tree: { id: 'r', type: 'button', on: { hover: { action: 'copy', text: 'x' } } },
+})
+throws('rejects an open action with a non-http url', {
+  kind: 'app', tree: { id: 'r', type: 'button', on: { click: { action: 'open', url: 'javascript:alert(1)' } } },
+})
+throws('rejects a set action carrying both value and expr', {
+  kind: 'app',
+  tree: {
+    id: 'r', type: 'button',
+    on: { click: { action: 'set', path: 'a', value: 1, expr: 'a + 1' } },
+  },
+})
+throws('rejects a bogus state path in an action', {
+  kind: 'app', tree: { id: 'r', type: 'button', on: { click: { action: 'set', path: 'a[b]', value: 1 } } },
+})
+throws('rejects a compute cycle', {
+  kind: 'app', compute: { a: 'b + 1', b: 'a + 1' }, tree: { id: 'r', type: 'text' },
+})
+throws('rejects a compute key that shadows state', {
+  kind: 'app', state: { a: 1 }, compute: { a: 'a + 1' }, tree: { id: 'r', type: 'text' },
+})
+throws('rejects an out-of-range stream interval', {
+  kind: 'app', tree: { id: 'r', type: 'text' }, stream: { mode: 'mock', intervalMs: 5 },
+})
+throws('rejects non-JSON state data', {
+  kind: 'app', state: { when: new Date() }, tree: { id: 'r', type: 'text' },
+})
+
+// ── playground: broken JSON is expected here, so it stays text ─────────────
+
+check('playground keeps the schema source as text, errors included', () => {
+  const spec = normalizeSpec({ kind: 'playground', source: '{"tree": ' })
+  assert.equal(spec.kind, 'playground')
+  assert.equal(spec.source, '{"tree": ')
+  assert.deepEqual(normalizeSpec(spec), spec)
+})
+
+check('playground renders without a source', () => {
+  assert.equal(normalizeSpec({ kind: 'playground' }).source, undefined)
+})
+
+throws('rejects a non-string playground source', { kind: 'playground', source: 7 })
+throws('rejects a blank playground source', { kind: 'playground', source: '   ' })
 
 console.log(`\n${checks} checks passed`)

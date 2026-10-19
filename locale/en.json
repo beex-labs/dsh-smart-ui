@@ -1,6 +1,6 @@
 {
   "meta": {
-    "title": "Smart UI",
-    "description": "Renders interactive cards, charts, and calculators inside the conversation."
+    "title": "Intelligent UI",
+    "description": "Generative UI inside conversations: the model writes a JSON UI schema and the page renders a live, state-bound interactive interface."
   }
 }

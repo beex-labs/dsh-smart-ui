@@ -1,0 +1,128 @@
+{
+  "title": "AA 分账计算器",
+  "caption": "账单/人数/小费三个输入实时算出总额与人均，甜甜圈图看费用构成，明细表逐人列出，一键复制摘要，表单登记付款人。",
+  "state": {
+    "bill": 240,
+    "people": 4,
+    "tip": 10,
+    "payer": ""
+  },
+  "compute": {
+    "tipAmt": "round(bill * tip / 100, 2)",
+    "total": "bill + tipAmt",
+    "perPerson": "round(total / people, 2)",
+    "shareSeries": "[{label: '账单净额', value: bill}, {label: '小费', value: tipAmt}]",
+    "perRows": "[{who: '成员 1', share: if(people >= 1, perPerson, 0), status: if(people >= 1, '待支付', '—')}, {who: '成员 2', share: if(people >= 2, perPerson, 0), status: if(people >= 2, '待支付', '—')}, {who: '成员 3', share: if(people >= 3, perPerson, 0), status: if(people >= 3, '待支付', '—')}, {who: '成员 4', share: if(people >= 4, perPerson, 0), status: if(people >= 4, '待支付', '—')}, {who: '成员 5', share: if(people >= 5, perPerson, 0), status: if(people >= 5, '待支付', '—')}, {who: '成员 6', share: if(people >= 6, perPerson, 0), status: if(people >= 6, '待支付', '—')}, {who: '成员 7', share: if(people >= 7, perPerson, 0), status: if(people >= 7, '待支付', '—')}, {who: '成员 8', share: if(people >= 8, perPerson, 0), status: if(people >= 8, '待支付', '—')}]",
+    "summary": "'AA分账 · 账单 ' + fmt(bill, 2) + ' 元 + 小费 ' + pct(tip / 100, 0) + ' (' + fmt(tipAmt, 2) + ' 元) = 总计 ' + fmt(total, 2) + ' 元, ' + people + ' 人分摊, 每人 ' + fmt(perPerson, 2) + ' 元'"
+  },
+  "tree": {
+    "id": "root",
+    "type": "column",
+    "props": { "gap": 14 },
+    "children": [
+      {
+        "id": "input-row",
+        "type": "row",
+        "props": { "gap": 12, "wrap": true },
+        "children": [
+          {
+            "id": "bill-input",
+            "type": "input",
+            "props": { "label": "账单金额 (元)", "type": "number", "min": 0, "step": 10, "value": 240 },
+            "bind": { "value": "bill" },
+            "on": { "input": { "action": "set", "path": "bill" } }
+          },
+          {
+            "id": "people-slider",
+            "type": "slider",
+            "props": { "label": "参与人数", "min": 2, "max": 8, "step": 1, "unit": " 人", "value": 4 },
+            "bind": { "value": "people" },
+            "on": { "change": { "action": "set", "path": "people" } }
+          },
+          {
+            "id": "tip-slider",
+            "type": "slider",
+            "props": { "label": "小费比例", "min": 0, "max": 30, "step": 1, "unit": "%", "value": 10 },
+            "bind": { "value": "tip" },
+            "on": { "change": { "action": "set", "path": "tip" } }
+          }
+        ]
+      },
+      {
+        "id": "kpi-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "kpi-total",
+            "type": "kpi",
+            "props": { "label": "应付总额", "unit": " 元", "tone": "info", "hint": "账单 + 小费" },
+            "bind": { "value": "total" }
+          },
+          {
+            "id": "kpi-tip",
+            "type": "kpi",
+            "props": { "label": "小费金额", "unit": " 元" },
+            "bind": { "value": "tipAmt", "hint": "'比例 ' + pct(tip / 100, 0)" }
+          },
+          {
+            "id": "kpi-per",
+            "type": "kpi",
+            "props": { "label": "人均应付", "unit": " 元", "tone": "success", "hint": "总额 ÷ 人数" },
+            "bind": { "value": "perPerson" }
+          }
+        ]
+      },
+      {
+        "id": "share-row",
+        "type": "row",
+        "props": { "gap": 12 },
+        "children": [
+          {
+            "id": "share-chart",
+            "type": "donutChart",
+            "props": { "label": "费用构成", "unit": " 元", "height": 240 },
+            "bind": { "series": "shareSeries" }
+          },
+          {
+            "id": "per-table",
+            "type": "dataTable",
+            "props": {
+              "columns": [
+                { "key": "who", "label": "成员" },
+                { "key": "share", "label": "应付 (元)", "align": "right" },
+                { "key": "status", "label": "状态" }
+              ],
+              "rows": [],
+              "pageSize": 8,
+              "caption": "行数随人数联动（2–8 人）",
+              "emptyText": "暂无成员"
+            },
+            "bind": { "rows": "perRows" }
+          }
+        ]
+      },
+      {
+        "id": "copy-btn",
+        "type": "button",
+        "props": { "label": "复制分账摘要", "icon": "copy", "variant": "primary" },
+        "on": {
+          "click": { "action": "copy", "expr": "summary" }
+        }
+      },
+      {
+        "id": "payer-form",
+        "type": "form",
+        "props": { "title": "登记付款人", "submitLabel": "提交登记" },
+        "on": { "submit": { "action": "submit", "form": "split" } },
+        "children": [
+          {
+            "id": "payer-input",
+            "type": "input",
+            "props": { "label": "付款人姓名", "name": "payer", "required": true, "placeholder": "如：张三", "help": "必填；提交后由 submit 动作确认" }
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,9 +1,11 @@
 # Dependencies — restored by `pnpm install`.
 node_modules/
 
-# Generated engine chunks. These are build outputs of build-echarts.mjs and
-# build-mermaid.mjs, which wrap the installed npm packages into the loader
-# envelope DSH serves. Rebuild with `node build-echarts.mjs && node build-mermaid.mjs`.
+# Generated engine chunks. These are build outputs of build-engine.mjs,
+# build-echarts.mjs and build-mermaid.mjs, which wrap the sources into the
+# loader envelope DSH serves. Rebuild with:
+#   node build-engine.mjs && node build-echarts.mjs && node build-mermaid.mjs
+client.engine.js
 client.echarts.js
 client.mermaid.js
 
@@ -11,6 +13,8 @@ client.mermaid.js
 # contact sheets. Regenerate with the scripts in test/.
 test/out/
 test/out-mermaid/
+test/out-font/
+test/out-app/
 
 # Headless-browser profiles, if a run ever writes one here. The test scripts
 # point --user-data-dir at the OS temp directory, so these should not appear;

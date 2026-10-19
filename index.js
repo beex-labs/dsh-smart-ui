@@ -1,23 +1,35 @@
 /**
- * Smart UI — host half.
+ * Intelligent UI — host half.
  *
  * Owns the model-facing `ui_render` tool and the one prompt section that tells
- * the model when a card beats prose. All rendering happens in `client.js`; this
- * half only validates the spec, normalizes it, and keeps the text the model
- * reads in the transcript as the source of truth.
+ * the model when a structure beats prose. All rendering happens in `client.js`;
+ * this half only validates the spec, normalizes it, and keeps the text the
+ * model reads in the transcript as the source of truth.
  *
- * The spec vocabulary is deliberately small and declarative: the model writes
- * data, never markup. Every kind is a plain JSON value, so the spec survives
- * the session log, a fork, and a resume unchanged.
+ * Two vocabularies live here:
+ *
+ *   - the ten fixed card kinds (`compare`, `chart`, …) for answers that are a
+ *     single structure;
+ *   - `kind: "app"` — the generative UI: a JSON UI Schema with a shared state,
+ *     computed values, a nested component tree with state bindings and actions.
+ *     Its schema rules, safe expression language and action planning live in
+ *     `engine.cjs`, shared with the Client so both halves validate identically.
+ *
+ * Every kind is plain JSON data, so the spec survives the session log, a fork,
+ * and a resume unchanged. The model writes data, never markup or JavaScript.
  */
 
-export const name = 'smart-ui'
+import {
+  validateApp, TYPE_NAMES, LIMITS,
+} from './engine.cjs'
+
+export const name = 'intelligent-ui'
 
 /** The tool registry and the prompt registry must exist. */
 export const inject = ['tools', 'systemPrompt']
 
 /** Maximum nodes accepted in one spec, so a runaway model cannot wedge the page. */
-const MAX_NODES = 400
+const MAX_NODES = LIMITS.maxNodes
 
 /**
  * The prompt section: the model's contract for choosing a card over prose.
@@ -42,6 +54,11 @@ const SECTION = `Prefer \`ui_render\` for any answer that is really a structure.
 - any arithmetic the user may want to redo with their own numbers, such as a bill split, a tip, or a total → \`calculator\`
 - a quantity converted between units → \`unit\`
 - one thing the user must not miss → \`note\`
+- an **interactive tool, simulator or dashboard** — something the user will adjust and watch the numbers, charts and tables move together (a trip planner, a budget simulator, a compound-interest explorer, a data dashboard with filters, a quiz) → \`kind: "app"\`, the generative UI
+
+\`kind: "app"\` is a JSON UI Schema, not markup: \`state\` holds the inputs, \`compute\` derives results from state with safe expressions (arithmetic, comparisons, \`round\`/\`min\`/\`max\`/\`sum\`/\`fmt\`/… — never JavaScript), \`tree\` is a nested component tree (\`{id, type, props, bind, on, children}\`) drawn from the registry — text, layout, controls, charts, tables, maps, media, feedback and micro-apps like \`quiz\`, \`flashcard\`, \`countdown\` — and \`on\` wires actions (\`set\`, \`toggle\`, \`copy\`, \`open\`, \`submit\`, \`call\`). Bind a prop with \`bind: {prop: "expression"}\` so one input change updates every dependent KPI, chart and table at once. Node ids must be unique, nesting stops at 8 levels, and every string renders as text — the schema never executes generated code. For a live demo of progressive rendering add \`"stream": {"mode": "mock"}\`; it replays the tree node by node exactly as a real LLM stream would arrive.
+
+Prefer one \`app\` per answer; put the prose around it. Use the fixed card kinds above for static structure — they are smaller and render instantly.
 
 Set \`tone\` on a point or node only when it carries meaning the reader should catch at a glance — \`success\` for passing or good, \`error\` for failing or bad, \`warn\` for attention, \`neutral\` for context, \`info\` for emphasis. Leave \`tone\` unset for plain data: an untoned series already cycles a theme-correct palette, and a tone that means nothing is noise. Never invent colors — tones resolve to the application's own theme, so they stay correct in light and dark.
 
@@ -352,13 +369,27 @@ export function normalizeSpec(input) {
       if (!TONES.has(tone)) throw new Error(`spec.tone must be one of ${[...TONES].join(', ')}`)
       return { ...head, tone, text: str(input.text, 'spec.text') }
     }
+    case 'app':
+      // The generative UI schema: state, compute, node tree, actions. Its
+      // validation lives in engine.cjs so the Client renders under exactly the
+      // rules the Host enforced.
+      return validateApp(input, { maxNodes: MAX_NODES })
+    case 'playground': {
+      // The Schema Playground: an editable JSON UI Schema with live validation
+      // and preview. The source is JSON *text* here on purpose — the
+      // playground is where a broken schema has to surface, not be rejected up
+      // front. (The field is `source`, not `value`: `value` already means the
+      // progress card's number in the tool schema.)
+      const source = input.source === undefined ? undefined : str(input.source, 'spec.source')
+      return { ...head, kind: 'playground', ...source === undefined ? {} : { source } }
+    }
     default:
       throw new Error(`unsupported kind: ${kind}`)
   }
 }
 
 /** Accepted `spec.kind` values. */
-const KIND_NAMES = new Set(['compare', 'chart', 'stats', 'progress', 'steps', 'table', 'diagram', 'calculator', 'unit', 'note'])
+const KIND_NAMES = new Set(['compare', 'chart', 'stats', 'progress', 'steps', 'table', 'diagram', 'calculator', 'unit', 'note', 'app', 'playground'])
 
 /** Accepted `spec.variant` values for the chart kind. */
 const CHART_VARIANTS = new Set(['bar', 'line', 'pie', 'donut'])
@@ -405,7 +436,7 @@ function compileFlowchart(nodes, edges, layout) {
   // Tones become class assignments, resolved to theme tokens by the Client.
   for (const tone of TONES) {
     const members = nodes.filter((node) => node.tone === tone).map((node) => node.id)
-    if (members.length > 0) lines.push(`  classDef tone_${tone} fill:var(--sui-tone-${tone}),stroke:var(--sui-tone-${tone})`)
+    if (members.length > 0) lines.push(`  classDef tone_${tone} fill:var(--iui-tone-${tone}),stroke:var(--iui-tone-${tone})`)
     if (members.length > 0) lines.push(`  class ${members.join(',')} tone_${tone}`)
   }
   return lines.join('\n')
@@ -444,6 +475,11 @@ const SPEC_PROPERTIES = {
   from: { type: 'string', description: 'unit: unit to convert from; defaults to the first.' },
   to: { type: 'string', description: 'unit: unit to convert to; defaults to the second.' },
   text: { type: 'string', description: 'note: the callout text.' },
+  state: { type: 'object', description: 'app: the initial shared state — plain JSON values (numbers, strings, booleans, arrays, objects) the inputs write to and the bindings read.' },
+  compute: { type: 'object', description: 'app: derived values as safe expressions over state and each other, e.g. {"per": "budget / people"}. No JavaScript — arithmetic, comparisons, round/min/max/sum/fmt/if and friends.' },
+  tree: { type: 'object', description: 'app: the root node of the component tree. Each node is {id, type, props, bind?, on?, children?}; `type` is a registry component, `bind` maps props to expressions, `on` maps events to actions ({action: set|toggle|copy|open|submit|call}). Ids unique, nesting at most 8 levels.' },
+  stream: { type: 'object', description: 'app: streaming options, {"mode": "mock"|"off", "intervalMs": 16..2000}. "mock" replays the tree node by node on first render, exactly as a real LLM stream would arrive.' },
+  source: { type: 'string', description: 'playground: the JSON UI Schema source to validate and preview. A broken schema is expected here — the card shows the validation error.' },
 }
 
 /** Count the payload entries a normalized spec carries, for the node budget. */
@@ -458,8 +494,14 @@ function nodeCount(spec) {
     case 'diagram': return spec.origin === 'raw' ? spec.mermaid.split('\n').length : spec.nodes.length + spec.edges.length
     case 'calculator': return spec.fields.length
     case 'unit': return spec.units.length
+    case 'app': return countNodes(spec.tree)
     default: return 1
   }
+}
+
+/** Nodes in one `app` tree, self included. */
+function countNodes(node) {
+  return 1 + (node.children ?? []).reduce((total, child) => total + countNodes(child), 0)
 }
 
 /** A one-line plain-text summary, so the transcript still reads without the card. */
@@ -474,6 +516,8 @@ function summarize(spec) {
     case 'diagram': return spec.origin === 'raw' ? `mermaid source, ${spec.mermaid.split('\n').length} lines` : `${spec.nodes.length} nodes, ${spec.edges.length} edges`
     case 'calculator': return `${spec.mode} calculator`
     case 'unit': return `convert between ${spec.units.join(', ')}`
+    case 'app': return `interactive app: ${countNodes(spec.tree)} components, ${Object.keys(spec.state ?? {}).length} state values`
+    case 'playground': return 'schema playground with live validation and preview'
     default: return spec.text
   }
 }
@@ -482,14 +526,14 @@ export function apply(ctx, config = {}) {
   const maxNodes = Number.isFinite(config.maxNodes) ? config.maxNodes : MAX_NODES
 
   ctx.effect(() => ctx.systemPrompt.section({
-    name: 'smart-ui',
+    name: 'intelligent-ui',
     order: 950,
     text: SECTION,
-  }), 'smart-ui: prompt section')
+  }), 'intelligent-ui: prompt section')
 
   ctx.effect(() => ctx.tools.register({
     name: 'ui_render',
-    description: 'Render an interactive visual card inside the conversation: a side-by-side comparison, a bar chart, headline figures, an ordered procedure, a table, a bill-split or tip calculator, a unit converter, or a short callout. Pass one declarative JSON spec of data — never HTML or markup. Reach for this whenever the answer is a structure rather than a sentence: three or more things compared on shared criteria, a series of magnitudes, two to six headline figures, three or more ordered steps, rows of records, arithmetic the user may want to redo with their own numbers, or a unit conversion. Keep your prose as the answer and let the card carry the structure. Plain text fits a single fact or a narrative with no structure to show — not merely a short answer.',
+    description: 'Render an interactive visual card inside the conversation: a side-by-side comparison, a bar chart, headline figures, an ordered procedure, a table, a bill-split or tip calculator, a unit converter, a short callout — or a full interactive app (kind "app") whose controls, KPIs, charts and tables are linked by shared state. Pass one declarative JSON spec of data — never HTML, markup or JavaScript. Reach for this whenever the answer is a structure rather than a sentence: three or more things compared on shared criteria, a series of magnitudes, two to six headline figures, three or more ordered steps, rows of records, arithmetic the user may want to redo with their own numbers, a unit conversion, or an interactive tool/simulator/dashboard the user will adjust and watch update live. Keep your prose as the answer and let the card carry the structure. Plain text fits a single fact or a narrative with no structure to show — not merely a short answer.',
     parameters: {
       type: 'object',
       properties: {
@@ -524,5 +568,5 @@ export function apply(ctx, config = {}) {
       }
       return spec
     },
-  }), 'smart-ui: ui_render tool')
+  }), 'intelligent-ui: ui_render tool')
 }
